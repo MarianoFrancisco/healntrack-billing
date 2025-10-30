@@ -1,0 +1,13 @@
+package com.sa.healntrack.billing_service.common.infrastructure.config;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@Getter
+@Setter
+@ConfigurationProperties(prefix = "spring.kafka.producer")
+public class KafkaProducerProperties {
+    private String acks = "all";
+    private Integer retries = 5;
+}
