@@ -46,13 +46,6 @@ public class BillingKafkaConsumer {
         } catch (DomainException ex) {
             LOG.warn("DOMAIN_ERROR code={} requestId={} offset={}", ex.getCode().name(), event.requestId, record.offset());
 
-        } catch (PermanentInfrastructureException ex) {
-            LOG.error("PERMANENT_INFRA_ERROR code={} requestId={} offset={}", ex.getCode().name(), event.requestId, record.offset(), ex);
-
-        } catch (TransientInfrastructureException ex) {
-            LOG.error("TRANSIENT_INFRA_ERROR code={} requestId={} offset={} (will retry)", ex.getCode().name(), event.requestId, record.offset(), ex);
-            throw ex;
-
         } catch (Exception ex) {
             LOG.error("UNKNOWN_ERROR requestId={} offset={} (will retry)", event.requestId, record.offset(), ex);
             throw new TransientInfrastructureException(ErrorCode.UNKNOWN_ERROR, ex);
