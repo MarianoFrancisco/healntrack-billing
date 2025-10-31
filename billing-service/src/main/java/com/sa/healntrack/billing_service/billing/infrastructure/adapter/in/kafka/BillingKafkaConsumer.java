@@ -10,17 +10,15 @@ import com.sa.healntrack.billing_service.common.application.error.ErrorCode;
 import com.sa.healntrack.billing_service.common.application.exception.DomainException;
 import com.sa.healntrack.billing_service.common.application.exception.TransientInfrastructureException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class BillingKafkaConsumer {
-
-    private static final Logger LOG = LoggerFactory.getLogger(BillingKafkaConsumer.class);
 
     private final GenerateInvoiceAndNotify useCase;
     private final ObjectMapper objectMapper;
@@ -38,15 +36,15 @@ public class BillingKafkaConsumer {
             GenerateInvoiceCommand cmd = BillingRequestedEventMapper.toCommand(event);
             useCase.handle(cmd);
         } catch (JsonProcessingException | IllegalArgumentException ex) {
-            LOG.error("DESERIALIZATION_ERROR offset={}", record.offset(), ex);
+            log.error("DESERIALIZATION_ERROR offset={}", record.offset(), ex);
             return;
         } catch (DomainException ex) {
             String reqId = (event != null ? event.getRequestId() : "unknown");
-            LOG.warn("DOMAIN_ERROR code={} requestId={} offset={}",
+            log.warn("DOMAIN_ERROR code={} requestId={} offset={}",
                     ex.getCode().name(), reqId, record.offset());
         } catch (Exception ex) {
             String reqId = (event != null ? event.getRequestId() : "unknown");
-            LOG.error("UNKNOWN_ERROR requestId={} offset={} (will retry)",
+            log.error("UNKNOWN_ERROR requestId={} offset={} (will retry)",
                     reqId, record.offset(), ex);
             throw new TransientInfrastructureException(ErrorCode.UNKNOWN_ERROR, ex);
         }
