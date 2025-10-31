@@ -1,5 +1,6 @@
 package com.sa.healntrack.billing_service.billing.infrastructure.adapter.in.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sa.healntrack.billing_service.billing.application.port.in.generate_invoice.GenerateInvoiceAndNotify;
 import com.sa.healntrack.billing_service.billing.application.port.in.generate_invoice.GenerateInvoiceCommand;
@@ -7,7 +8,6 @@ import com.sa.healntrack.billing_service.billing.infrastructure.adapter.in.kafka
 import com.sa.healntrack.billing_service.billing.infrastructure.adapter.in.kafka.mappers.BillingRequestedEventMapper;
 import com.sa.healntrack.billing_service.common.application.error.ErrorCode;
 import com.sa.healntrack.billing_service.common.application.exception.DomainException;
-import com.sa.healntrack.billing_service.common.application.exception.PermanentInfrastructureException;
 import com.sa.healntrack.billing_service.common.application.exception.TransientInfrastructureException;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -31,23 +31,23 @@ public class BillingKafkaConsumer {
             containerFactory = "billingKafkaListenerContainerFactory"
     )
     public void onMessage(ConsumerRecord<String, String> record) {
-        BillingRequestedEvent event;
+        BillingRequestedEvent event = null;
         try {
             event = objectMapper.readValue(record.value(), BillingRequestedEvent.class);
-        } catch (Exception ex) {
-            LOG.error("DESERIALIZATION_ERROR offset={}", record.offset(), ex);
-            return;
-        }
 
-        try {
             GenerateInvoiceCommand cmd = BillingRequestedEventMapper.toCommand(event);
             useCase.handle(cmd);
-
+        } catch (JsonProcessingException | IllegalArgumentException ex) {
+            LOG.error("DESERIALIZATION_ERROR offset={}", record.offset(), ex);
+            return;
         } catch (DomainException ex) {
-            LOG.warn("DOMAIN_ERROR code={} requestId={} offset={}", ex.getCode().name(), event.requestId, record.offset());
-
+            String reqId = (event != null ? event.getRequestId() : "unknown");
+            LOG.warn("DOMAIN_ERROR code={} requestId={} offset={}",
+                    ex.getCode().name(), reqId, record.offset());
         } catch (Exception ex) {
-            LOG.error("UNKNOWN_ERROR requestId={} offset={} (will retry)", event.requestId, record.offset(), ex);
+            String reqId = (event != null ? event.getRequestId() : "unknown");
+            LOG.error("UNKNOWN_ERROR requestId={} offset={} (will retry)",
+                    reqId, record.offset(), ex);
             throw new TransientInfrastructureException(ErrorCode.UNKNOWN_ERROR, ex);
         }
     }

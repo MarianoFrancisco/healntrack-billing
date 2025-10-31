@@ -10,10 +10,10 @@ public final class BillingRequestedEventMapper {
 
     public static GenerateInvoiceCommand toCommand(BillingRequestedEvent e) {
         return new GenerateInvoiceCommand(
-                e.requestId,
-                e.subject,
-                e.templateKey,
-                e.data
+                e.getRequestId(),
+                e.getSubject(),
+                e.getTemplateKey(),
+                e.getData()
         );
     }
 }

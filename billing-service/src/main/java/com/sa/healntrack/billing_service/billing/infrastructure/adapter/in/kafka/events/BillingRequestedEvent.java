@@ -1,12 +1,15 @@
 package com.sa.healntrack.billing_service.billing.infrastructure.adapter.in.kafka.events;
 
 import com.sa.healntrack.billing_service.billing.domain.InvoiceData;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Getter
 @NoArgsConstructor
 public class BillingRequestedEvent {
-    public String requestId;
-    public String subject;
-    public String templateKey;
-    public InvoiceData data;
+
+    private String requestId;
+    private String subject;
+    private String templateKey;
+    private InvoiceData data;
 }
