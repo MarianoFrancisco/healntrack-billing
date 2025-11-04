@@ -25,10 +25,9 @@ public class BillingKafkaConsumer {
 
     @KafkaListener(
             topics = "#{@billingTopicProperties.requested}",
-            groupId = "#{@kafkaConsumerProperties.groupId}",
-            containerFactory = "billingKafkaListenerContainerFactory"
+            groupId = "#{@kafkaConsumerProperties.groupId}"
     )
-    public void onMessage(ConsumerRecord<String, String> record) {
+    public void onMessage(ConsumerRecord<String, byte[]> record) {
         BillingRequestedEvent event = null;
         try {
             event = objectMapper.readValue(record.value(), BillingRequestedEvent.class);
@@ -37,7 +36,6 @@ public class BillingKafkaConsumer {
             useCase.handle(cmd);
         } catch (JsonProcessingException | IllegalArgumentException ex) {
             log.error("DESERIALIZATION_ERROR offset={}", record.offset(), ex);
-            return;
         } catch (DomainException ex) {
             String reqId = (event != null ? event.getRequestId() : "unknown");
             log.warn("DOMAIN_ERROR code={} requestId={} offset={}",
