@@ -56,96 +56,38 @@ jobs:
             echo "EUREKA_PORT=${{ secrets.EUREKA_PORT }}" >> $GITHUB_ENV
           fi
 
-      - name: Debug env in runner
-        run: |
-          echo "GITHUB_REF_NAME=${GITHUB_REF_NAME}"
-          echo "HOST=${HOST}"
-          echo "SERVER_PORT=${SERVER_PORT}"
-          echo "SPRING_APPLICATION_NAME=${SPRING_APPLICATION_NAME}"
-
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.GCP_VM_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
 
       - name: Deploy to VM
         run: |
-          ssh ${{ secrets.GCP_VM_USER }}@$HOST << EOF
-            set -euo pipefail
-
+          ssh ${{ secrets.GCP_VM_USER }}@$HOST << 'EOF'
             cd ./healntrack-billing
-            echo ">> Branch recibido: ${GITHUB_REF_NAME}"
             git checkout ${GITHUB_REF_NAME}
             git pull
+            sudo docker build -t billing-service .
 
-            echo ">> Docker build (plain logs)"
-            sudo docker build --progress=plain -t billing-service .
-
-            echo ">> Stop & remove prev container (si existe)"
             sudo docker stop billing-service || true
-            sudo docker rm   billing-service || true
-
-            echo "========== DEBUG VARS EN VM =========="
-            echo "SERVER_PORT='${SERVER_PORT}'"
-            echo "SPRING_APPLICATION_NAME='${SPRING_APPLICATION_NAME}'"
-            echo "KAFKA_HOST='${KAFKA_HOST}'"
-            echo "KAFKA_GROUP='${KAFKA_GROUP}'"
-            echo "KAFKA_CONCURRENCY='${KAFKA_CONCURRENCY}'"
-            echo "TOPIC_BILLING_REQUESTED='${TOPIC_BILLING_REQUESTED}'"
-            echo "BILLING_TEMPLATE_KEY='${BILLING_TEMPLATE_KEY}'"
-            echo "TOPIC_NOTIFICATION_REQUESTED='${TOPIC_NOTIFICATION_REQUESTED}'"
-            echo "LOG_LEVEL_ROOT='${LOG_LEVEL_ROOT}'"
-            echo "LOG_LEVEL_HIBERNATE_SQL='${LOG_LEVEL_HIBERNATE_SQL}'"
-            echo "LOG_LEVEL_HIBERNATE_BIND='${LOG_LEVEL_HIBERNATE_BIND}'"
-            echo "EUREKA_HOSTNAME='${EUREKA_HOSTNAME}'"
-            echo "EUREKA_PORT='${EUREKA_PORT}'"
-            echo "======================================"
-
-            # Sanitizar y validar puerto (evita 'invalid proto:')
-            RAW_PORT="\${SERVER_PORT}"
-            HOST_PORT="\${RAW_PORT//[^0-9]/}"
-            if [ -z "\${HOST_PORT}" ]; then
-              echo "ERROR: SERVER_PORT invalido: '\${RAW_PORT}'"
-              exit 1
-            fi
-            echo "Usando HOST_PORT=\${HOST_PORT} (container 8007)"
-
-            echo "---------- DOCKER RUN PREVIEW ----------"
-            printf '%q ' sudo docker run -d --name billing-service \
-              -p \${HOST_PORT}:8007 \
-              -e SERVER_PORT=\${HOST_PORT} \
-              -e SPRING_APPLICATION_NAME=${SPRING_APPLICATION_NAME} \
-              -e KAFKA_HOST=${KAFKA_HOST} \
-              -e KAFKA_GROUP=${KAFKA_GROUP} \
-              -e KAFKA_CONCURRENCY=${KAFKA_CONCURRENCY} \
-              -e TOPIC_BILLING_REQUESTED=${TOPIC_BILLING_REQUESTED} \
-              -e BILLING_TEMPLATE_KEY=${BILLING_TEMPLATE_KEY} \
-              -e TOPIC_NOTIFICATION_REQUESTED=${TOPIC_NOTIFICATION_REQUESTED} \
-              -e LOG_LEVEL_ROOT=${LOG_LEVEL_ROOT} \
-              -e LOG_LEVEL_HIBERNATE_SQL=${LOG_LEVEL_HIBERNATE_SQL} \
-              -e LOG_LEVEL_HIBERNATE_BIND=${LOG_LEVEL_HIBERNATE_BIND} \
-              -e EUREKA_HOSTNAME=${EUREKA_HOSTNAME} \
-              -e EUREKA_PORT=${EUREKA_PORT} \
-              billing-service
-            echo
-            echo "----------------------------------------"
+            sudo docker rm billing-service || true
 
             sudo docker run -d --name billing-service \
-              -p \${HOST_PORT}:8007 \
-              -e SERVER_PORT=\${HOST_PORT} \
-              -e SPRING_APPLICATION_NAME=${SPRING_APPLICATION_NAME} \
-              -e KAFKA_HOST=${KAFKA_HOST} \
-              -e KAFKA_GROUP=${KAFKA_GROUP} \
-              -e KAFKA_CONCURRENCY=${KAFKA_CONCURRENCY} \
-              -e TOPIC_BILLING_REQUESTED=${TOPIC_BILLING_REQUESTED} \
-              -e BILLING_TEMPLATE_KEY=${BILLING_TEMPLATE_KEY} \
-              -e TOPIC_NOTIFICATION_REQUESTED=${TOPIC_NOTIFICATION_REQUESTED} \
-              -e LOG_LEVEL_ROOT=${LOG_LEVEL_ROOT} \
-              -e LOG_LEVEL_HIBERNATE_SQL=${LOG_LEVEL_HIBERNATE_SQL} \
-              -e LOG_LEVEL_HIBERNATE_BIND=${LOG_LEVEL_HIBERNATE_BIND} \
-              -e EUREKA_HOSTNAME=${EUREKA_HOSTNAME} \
-              -e EUREKA_PORT=${EUREKA_PORT} \
+              -p $SERVER_PORT:$SERVER_PORT \
+              -e SERVER_PORT=$SERVER_PORT \
+              -e SPRING_APPLICATION_NAME=$SPRING_APPLICATION_NAME \
+              -e KAFKA_HOST=$KAFKA_HOST \
+              -e KAFKA_GROUP=$KAFKA_GROUP \
+              -e KAFKA_CONCURRENCY=$KAFKA_CONCURRENCY \
+              -e TOPIC_BILLING_REQUESTED=$TOPIC_BILLING_REQUESTED \
+              -e BILLING_TEMPLATE_KEY=$BILLING_TEMPLATE_KEY \
+              -e TOPIC_NOTIFICATION_REQUESTED=$TOPIC_NOTIFICATION_REQUESTED \
+              -e LOG_LEVEL_ROOT=$LOG_LEVEL_ROOT \
+              -e LOG_LEVEL_HIBERNATE_SQL=$LOG_LEVEL_HIBERNATE_SQL \
+              -e LOG_LEVEL_HIBERNATE_BIND=$LOG_LEVEL_HIBERNATE_BIND \
+              -e EUREKA_HOSTNAME=$EUREKA_HOSTNAME \
+              -e EUREKA_PORT=$EUREKA_PORT \
               billing-service
           EOF
