@@ -66,7 +66,7 @@ jobs:
       - name: Deploy to VM
         run: |
           ssh ${{ secrets.GCP_VM_USER }}@$HOST << EOF
-            cd healntrack-billing
+            cd ./healntrack-billing
             git checkout ${GITHUB_REF_NAME}
             git pull
             sudo docker build -t billing-service .
