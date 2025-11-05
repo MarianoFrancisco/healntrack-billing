@@ -1,0 +1,42 @@
+name: billing
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set HOST based on branch
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "HOST=${{ secrets.GCP_VM_HOST_PROD }}" >> $GITHUB_ENV
+          else
+            echo "HOST=${{ secrets.GCP_VM_HOST }}" >> $GITHUB_ENV
+          fi
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_VM_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
+
+      - name: Deploy to VM
+        run: |
+          ssh ${{ secrets.GCP_VM_USER }}@$HOST << 'EOF'
+            cd ./healntrack-billing
+            git checkout ${GITHUB_REF_NAME}
+            git pull
+            sudo docker build -t billing-service .
+            sudo docker stop billing-service || true
+            sudo docker rm billing-service || true
+            sudo docker run -d --name billing-service billing-service
+          EOF
