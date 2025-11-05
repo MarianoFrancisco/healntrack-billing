@@ -1,0 +1,19 @@
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+
+WORKDIR /app
+
+COPY billing-service/pom.xml .
+
+COPY billing-service/src ./src
+
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+COPY --from=build /app/target/billing-service-1.0.0.jar app.jar
+
+EXPOSE 8007
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

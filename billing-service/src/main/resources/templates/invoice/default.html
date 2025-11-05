@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${subject}">Factura HealnTrack</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f2f4f7;
+            margin: 0;
+            color: #2b2b2b;
+        }
+
+        .invoice {
+            max-width: 720px;
+            margin: 20px auto;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .08);
+            padding: 34px 40px 40px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #1e73ff;
+            padding-bottom: 18px;
+            margin-bottom: 30px;
+        }
+
+        .logo img {
+            height: 80px;
+            width: auto;
+            display: block;
+            margin: 0 auto 10px;
+        }
+
+        .meta {
+            text-align: center;
+            font-size: .95em;
+            color: #54606b;
+            margin-bottom: 14px;
+        }
+
+        .info-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: .93em;
+            color: #21406d;
+            margin: 10px 0 20px;
+        }
+
+        .info-line .left,
+        .info-line .right {
+            background: #f0f5ff;
+            border: 1px solid #d6e2ff;
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-weight: 600;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .title {
+            text-align: center;
+            margin: 26px 0 20px;
+        }
+
+        .title h1 {
+            margin: 0;
+            font-size: 30px;
+            font-weight: 800;
+            color: #1e73ff;
+        }
+
+        .description {
+            text-align: center;
+            margin: 0 auto 30px;
+            color: #3a3a3a;
+            font-size: 1em;
+            max-width: 90%;
+        }
+
+        table.items {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 28px;
+            border-radius: 10px;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        thead th {
+            background: #1e73ff;
+            color: #fff;
+            padding: 12px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        tbody td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #e7e9ee;
+            text-align: center;
+        }
+
+        tbody tr:nth-child(even) td {
+            background: #f8fbff;
+        }
+
+        tfoot td {
+            padding: 14px 12px;
+            background: #eef4ff;
+            border-top: 2px solid #1e73ff;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .total-amount {
+            color: #1e73ff;
+            font-size: 1.05em;
+        }
+
+        .footer {
+            border-top: 1px solid #e7e9ee;
+            padding-top: 26px;
+            margin-top: 36px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .footer p {
+            margin: 0 auto;
+            line-height: 1.7;
+            color: #6b7280;
+            font-size: .95em;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .invoice {
+                padding: 22px;
+            }
+
+            .info-line {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .info-line .left,
+            .info-line .right {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .title h1 {
+                font-size: 24px;
+            }
+
+            thead th, tbody td {
+                font-size: .9em;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="invoice">
+    <header class="header">
+        <div class="logo">
+            <img src="https://trackmyhealth.gr/wp-content/uploads/2020/05/logo-new-500.png" alt="Logo HealnTrack">
+        </div>
+        <div class="meta">
+            Fecha de emisión:
+            <span th:text="${#temporals.format(it.date, 'dd/MM/yyyy')}">01/01/2025</span>
+        </div>
+        <div class="info-line">
+            <div class="left">
+                Nombre: <span th:text="${it.user.name}">HealnTrack</span>
+            </div>
+            <div class="right" th:if="${it.user.taxId != null}">
+                NIT: <span th:text="${it.user.taxId.value}">C/F</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="title">
+        <h1 th:text="${it.title}">Factura HealnTrack</h1>
+    </div>
+
+    <section class="description" th:if="${it.description != null}">
+        <p th:text="${it.description}">Descripción.</p>
+    </section>
+
+    <section>
+        <table class="items">
+            <thead>
+            <tr>
+                <th>Concepto</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Subtotal</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${it.items}">
+                <td th:text="${item.name}">Consulta General</td>
+                <td th:text="${item.qty}">1</td>
+                <td>Q <span th:text="${#numbers.formatDecimal(item.price, 1, 2)}">0.00</span></td>
+                <td>Q <span th:text="${#numbers.formatDecimal(item.subtotal, 1, 2)}">0.00</span></td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr>
+                <td colspan="3">Total:</td>
+                <td class="total-amount">Q <span th:text="${#numbers.formatDecimal(it.total, 1, 2)}">490.00</span></td>
+            </tr>
+            </tfoot>
+        </table>
+    </section>
+
+    <footer class="footer">
+        <p>
+            Gracias por su preferencia.
+        </p>
+    </footer>
+</div>
+</body>
+</html>
