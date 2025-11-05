@@ -2,9 +2,7 @@ name: billing
 
 on:
   push:
-    branches:
-      - develop
-      - main
+    branches: [develop, main]
 
 jobs:
   deploy:
@@ -14,12 +12,48 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set HOST based on branch
+      - name: Set environment variables based on branch
         run: |
           if [ "${GITHUB_REF_NAME}" = "main" ]; then
             echo "HOST=${{ secrets.GCP_VM_HOST_PROD }}" >> $GITHUB_ENV
+
+            echo "SERVER_PORT=${{ vars.SERVER_PORT_PROD }}" >> $GITHUB_ENV
+            echo "SPRING_APPLICATION_NAME=${{ vars.SPRING_APPLICATION_NAME_PROD }}" >> $GITHUB_ENV
+
+            echo "KAFKA_HOST=${{ secrets.KAFKA_HOST_PROD }}" >> $GITHUB_ENV
+            echo "KAFKA_GROUP=${{ vars.KAFKA_GROUP_PROD }}" >> $GITHUB_ENV
+            echo "KAFKA_CONCURRENCY=${{ vars.KAFKA_CONCURRENCY_PROD }}" >> $GITHUB_ENV
+
+            echo "TOPIC_BILLING_REQUESTED=${{ vars.TOPIC_BILLING_REQUESTED_PROD }}" >> $GITHUB_ENV
+            echo "BILLING_TEMPLATE_KEY=${{ vars.BILLING_TEMPLATE_KEY_PROD }}" >> $GITHUB_ENV
+            echo "TOPIC_NOTIFICATION_REQUESTED=${{ vars.TOPIC_NOTIFICATION_REQUESTED_PROD }}" >> $GITHUB_ENV
+
+            echo "LOG_LEVEL_ROOT=${{ vars.LOG_LEVEL_ROOT_PROD }}" >> $GITHUB_ENV
+            echo "LOG_LEVEL_HIBERNATE_SQL=${{ vars.LOG_LEVEL_HIBERNATE_SQL_PROD }}" >> $GITHUB_ENV
+            echo "LOG_LEVEL_HIBERNATE_BIND=${{ vars.LOG_LEVEL_HIBERNATE_BIND_PROD }}" >> $GITHUB_ENV
+
+            echo "EUREKA_HOSTNAME=${{ secrets.EUREKA_HOSTNAME_PROD }}" >> $GITHUB_ENV
+            echo "EUREKA_PORT=${{ secrets.EUREKA_PORT_PROD }}" >> $GITHUB_ENV
           else
             echo "HOST=${{ secrets.GCP_VM_HOST }}" >> $GITHUB_ENV
+
+            echo "SERVER_PORT=${{ vars.SERVER_PORT }}" >> $GITHUB_ENV
+            echo "SPRING_APPLICATION_NAME=${{ vars.SPRING_APPLICATION_NAME }}" >> $GITHUB_ENV
+
+            echo "KAFKA_HOST=${{ secrets.KAFKA_HOST }}" >> $GITHUB_ENV
+            echo "KAFKA_GROUP=${{ vars.KAFKA_GROUP }}" >> $GITHUB_ENV
+            echo "KAFKA_CONCURRENCY=${{ vars.KAFKA_CONCURRENCY }}" >> $GITHUB_ENV
+
+            echo "TOPIC_BILLING_REQUESTED=${{ vars.TOPIC_BILLING_REQUESTED }}" >> $GITHUB_ENV
+            echo "BILLING_TEMPLATE_KEY=${{ vars.BILLING_TEMPLATE_KEY }}" >> $GITHUB_ENV
+            echo "TOPIC_NOTIFICATION_REQUESTED=${{ vars.TOPIC_NOTIFICATION_REQUESTED }}" >> $GITHUB_ENV
+
+            echo "LOG_LEVEL_ROOT=${{ vars.LOG_LEVEL_ROOT }}" >> $GITHUB_ENV
+            echo "LOG_LEVEL_HIBERNATE_SQL=${{ vars.LOG_LEVEL_HIBERNATE_SQL }}" >> $GITHUB_ENV
+            echo "LOG_LEVEL_HIBERNATE_BIND=${{ vars.LOG_LEVEL_HIBERNATE_BIND }}" >> $GITHUB_ENV
+
+            echo "EUREKA_HOSTNAME=${{ secrets.EUREKA_HOSTNAME }}" >> $GITHUB_ENV
+            echo "EUREKA_PORT=${{ secrets.EUREKA_PORT }}" >> $GITHUB_ENV
           fi
 
       - name: Set up SSH
@@ -32,11 +66,28 @@ jobs:
       - name: Deploy to VM
         run: |
           ssh ${{ secrets.GCP_VM_USER }}@$HOST << EOF
-            cd ./healntrack-billing
+            cd healntrack-billing
             git checkout ${GITHUB_REF_NAME}
             git pull
             sudo docker build -t billing-service .
+
             sudo docker stop billing-service || true
             sudo docker rm billing-service || true
-            sudo docker run -d --name billing-service billing-service
+
+            sudo docker run -d --name billing-service \
+              -p $SERVER_PORT:$SERVER_PORT \
+              -e SERVER_PORT=$SERVER_PORT \
+              -e SPRING_APPLICATION_NAME=$SPRING_APPLICATION_NAME \
+              -e KAFKA_HOST=$KAFKA_HOST \
+              -e KAFKA_GROUP=$KAFKA_GROUP \
+              -e KAFKA_CONCURRENCY=$KAFKA_CONCURRENCY \
+              -e TOPIC_BILLING_REQUESTED=$TOPIC_BILLING_REQUESTED \
+              -e BILLING_TEMPLATE_KEY=$BILLING_TEMPLATE_KEY \
+              -e TOPIC_NOTIFICATION_REQUESTED=$TOPIC_NOTIFICATION_REQUESTED \
+              -e LOG_LEVEL_ROOT=$LOG_LEVEL_ROOT \
+              -e LOG_LEVEL_HIBERNATE_SQL=$LOG_LEVEL_HIBERNATE_SQL \
+              -e LOG_LEVEL_HIBERNATE_BIND=$LOG_LEVEL_HIBERNATE_BIND \
+              -e EUREKA_HOSTNAME=$EUREKA_HOSTNAME \
+              -e EUREKA_PORT=$EUREKA_PORT \
+              billing-service
           EOF
