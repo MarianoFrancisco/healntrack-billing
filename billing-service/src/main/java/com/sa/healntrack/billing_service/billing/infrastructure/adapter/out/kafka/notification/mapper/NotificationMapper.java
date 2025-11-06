@@ -8,12 +8,12 @@ import lombok.experimental.UtilityClass;
 public class NotificationMapper {
 
     public NotificationRequestedMessage toMessage(PublishNotificationCreatedCommand command) {
-        return NotificationRequestedMessage.builder()
-                .requestId(command.requestId())
-                .to(command.to())
-                .toName(command.toName())
-                .subject(command.subject())
-                .bodyHtml(command.bodyHtml())
-                .build();
+        return new NotificationRequestedMessage(
+                command.requestId(),
+                command.to(),
+                command.toName(),
+                command.subject(),
+                command.bodyHtml()
+        );
     }
 }
