@@ -1,4 +1,4 @@
-package com.sa.healntrack.billing_service.billing.infrastructure.adapter.out.notification;
+package com.sa.healntrack.billing_service.billing.infrastructure.adapter.out.kafka.notification.message;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class NotificationRequested {
+public class NotificationRequestedMessage {
 
     private String requestId;
     private String to;
