@@ -1,19 +1,33 @@
 package com.sa.healntrack.billing_service.billing.infrastructure.adapter.in.kafka.mappers;
 
 import com.sa.healntrack.billing_service.billing.application.port.in.generate_invoice.GenerateInvoiceCommand;
-import com.sa.healntrack.billing_service.billing.infrastructure.adapter.in.kafka.events.BillingRequestedEvent;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import com.sa.healntrack.billing_service.billing.application.port.in.generate_invoice.Item;
+import com.sa.healntrack.billing_service.billing.infrastructure.adapter.in.kafka.message.BillingRequestedMessage;
+import lombok.experimental.UtilityClass;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class BillingRequestedEventMapper {
+@UtilityClass
+public class BillingRequestedEventMapper {
 
-    public static GenerateInvoiceCommand toCommand(BillingRequestedEvent e) {
+    public GenerateInvoiceCommand toCommand(BillingRequestedMessage e) {
         return new GenerateInvoiceCommand(
-                e.getRequestId(),
-                e.getSubject(),
-                e.getTemplateKey(),
-                e.getData()
+                e.requestId(),
+                e.subject(),
+                e.templateKey(),
+                e.title(),
+                e.description(),
+                e.email(),
+                e.taxId(),
+                e.name(),
+                e.items().stream()
+                        .map(i -> new Item(
+                                i.name(),
+                                i.qty(),
+                                i.price(),
+                                i.subtotal()
+                        ))
+                        .toList(),
+                e.total(),
+                e.date()
         );
     }
 }

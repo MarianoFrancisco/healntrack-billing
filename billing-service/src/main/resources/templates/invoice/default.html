@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${subject}">Factura HealnTrack</title>
+    <title th:text="${it.subject}">Factura HealnTrack</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -178,10 +178,10 @@
         </div>
         <div class="info-line">
             <div class="left">
-                Nombre: <span th:text="${it.user.name}">HealnTrack</span>
+                Nombre: <span th:text="${it.name}">HealnTrack</span>
             </div>
-            <div class="right" th:if="${it.user.taxId != null}">
-                NIT: <span th:text="${it.user.taxId.value}">C/F</span>
+            <div class="right" th:if="${it.taxId != null and !#strings.isEmpty(it.taxId)}">
+                NIT: <span th:text="${it.taxId}">C/F</span>
             </div>
         </div>
     </header>
@@ -190,7 +190,7 @@
         <h1 th:text="${it.title}">Factura HealnTrack</h1>
     </div>
 
-    <section class="description" th:if="${it.description != null}">
+    <section class="description" th:if="${it.description != null and !#strings.isEmpty(it.description)}">
         <p th:text="${it.description}">Descripción.</p>
     </section>
 
