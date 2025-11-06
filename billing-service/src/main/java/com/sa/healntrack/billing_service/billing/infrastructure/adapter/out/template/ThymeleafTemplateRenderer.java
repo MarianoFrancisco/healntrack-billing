@@ -15,8 +15,12 @@ public class ThymeleafTemplateRenderer implements HtmlTemplateRenderer {
 
     @Override
     public String render(String key, GenerateInvoiceCommand data) {
-        Context ctx = new Context();
-        ctx.setVariable("it", data);
-        return templateEngine.process(key, ctx);
+        try {
+            Context ctx = new Context();
+            ctx.setVariable("it", data);
+            return templateEngine.process(key, ctx);
+        } catch (Exception e) {
+            throw new RuntimeException("Error renderizando la plantilla con key: " + key, e);
+        }
     }
 }
