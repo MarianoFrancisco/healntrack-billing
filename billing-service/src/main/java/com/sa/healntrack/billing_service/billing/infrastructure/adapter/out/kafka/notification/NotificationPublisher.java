@@ -31,7 +31,7 @@ public class NotificationPublisher implements PublishNotificationCreated {
             byte[] eventBytes = objectMapper.writeValueAsBytes(notificationRequestedMessage);
 
             ProducerRecord<String, byte[]> record =
-                    new ProducerRecord<>(notificationTopics.getRequested(), UUID.randomUUID().toString(), eventBytes);
+                    new ProducerRecord<>(notificationTopics.getRequested(), notificationRequestedMessage.getRequestId(), eventBytes);
             kafkaTemplate.send(record);
         } catch (JsonProcessingException ex) {
             throw new SerializerException("NotificationRequestedMessage");
